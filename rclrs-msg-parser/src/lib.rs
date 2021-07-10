@@ -5,5 +5,6 @@
     clippy::nursery
 )]
 
-pub mod ast;
+pub mod field_type;
 pub mod parser;
+pub mod spec;
