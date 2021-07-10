@@ -6,5 +6,5 @@
 )]
 
 pub mod field_type;
-pub mod parser;
+pub(crate) mod parser;
 pub mod spec;

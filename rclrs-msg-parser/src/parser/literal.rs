@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, tag_no_case, take_while};
 use nom::character::complete::{digit1, hex_digit1, oct_digit1, one_of};
-use nom::combinator::{map, opt};
+use nom::combinator::{map, opt, value};
 use nom::multi::separated_list1;
 use nom::sequence::tuple;
 use nom::IResult;
@@ -17,7 +17,7 @@ pub fn integer_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
     alt((bin_literal, oct_literal, hex_literal, dec_literal))(i)
 }
 
-pub fn bin_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
+fn bin_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
     map(
         tuple((
             flag_if_exist,
@@ -31,7 +31,7 @@ pub fn bin_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
     )(i)
 }
 
-pub fn oct_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
+fn oct_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
     map(
         tuple((
             flag_if_exist,
@@ -45,7 +45,7 @@ pub fn oct_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
     )(i)
 }
 
-pub fn dec_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
+fn dec_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
     map(
         tuple((flag_if_exist, separated_list1(tag("_"), digit1))),
         |(flag, digits)| {
@@ -55,7 +55,7 @@ pub fn dec_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
     )(i)
 }
 
-pub fn hex_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
+fn hex_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
     map(
         tuple((
             flag_if_exist,
@@ -67,6 +67,18 @@ pub fn hex_literal(i: &str) -> IResult<&str, anyhow::Result<i128>> {
             Ok(out)
         },
     )(i)
+}
+
+pub fn bool_literal(i: &str) -> IResult<&str, bool> {
+    alt((true_literal, false_literal))(i)
+}
+
+fn true_literal(i: &str) -> IResult<&str, bool> {
+    value(true, alt((tag("true"), tag("1"))))(i)
+}
+
+fn false_literal(i: &str) -> IResult<&str, bool> {
+    value(false, alt((tag("false"), tag("0"))))(i)
 }
 
 #[cfg(test)]
@@ -114,5 +126,13 @@ mod test {
         assert_eq!(hex_literal("0x789_aBc").unwrap().1.unwrap(), 0x789abc);
         assert_eq!(hex_literal("+0x789_aBc").unwrap().1.unwrap(), 0x789abc);
         assert_eq!(hex_literal("-0x789_aBc").unwrap().1.unwrap(), -0x789abc);
+    }
+
+    #[test]
+    fn parse_bool_literal() {
+        assert_eq!(bool_literal("true").unwrap().1, true);
+        assert_eq!(bool_literal("false").unwrap().1, false);
+        assert_eq!(bool_literal("1").unwrap().1, true);
+        assert_eq!(bool_literal("0").unwrap().1, false);
     }
 }
