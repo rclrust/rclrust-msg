@@ -7,7 +7,7 @@ use nom::sequence::{preceded, tuple};
 use nom::IResult;
 
 use crate::field_type::{BasicType, FieldType};
-use crate::parser::identifier::identifier;
+use crate::parser::identifier::field_name;
 use crate::parser::literal::{bool_literal, integer_literal};
 use crate::spec::Field;
 
@@ -27,7 +27,7 @@ pub fn integer_field_def(i: &str) -> IResult<&str, anyhow::Result<Field>> {
                 tag("byte"),
             )),
             space1,
-            identifier,
+            field_name,
             opt(preceded(space1, integer_literal)),
         )),
         |(basic_type, _, name, default)| {
@@ -67,7 +67,7 @@ pub fn float_field_def(i: &str) -> IResult<&str, Field> {
         tuple((
             alt((tag("float32"), tag("float64"))),
             space1,
-            identifier,
+            field_name,
             opt(preceded(space1, recognize_float)),
         )),
         |(basic_type, _, name, default)| {
@@ -90,7 +90,7 @@ pub fn bool_field_def(i: &str) -> IResult<&str, Field> {
         tuple((
             tag("bool"),
             space1,
-            identifier,
+            field_name,
             opt(preceded(space1, bool_literal)),
         )),
         |(_, _, name, default)| Field {
