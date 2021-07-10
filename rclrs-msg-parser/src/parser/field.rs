@@ -111,7 +111,7 @@ mod test {
         ($test_common_name:ident, $msg_type:expr, $basic_type:expr, $out_range:expr) => {
             paste! {
                 #[test]
-                fn [<$test_common_name unc>]() {
+                fn $test_common_name() {
                     let input = format!("{} aaa", $msg_type);
                     let result = integer_field_def(&input).unwrap().1.unwrap();
                     assert_eq!(result.name, "aaa");
@@ -146,7 +146,7 @@ mod test {
     impl_int_field_def_test!(parse_i8_field_def, "int8", BasicType::I8, 1u64 << 7);
     impl_int_field_def_test!(parse_i16_field_def, "int16", BasicType::I16, 1u64 << 15);
     impl_int_field_def_test!(parse_i32_field_def, "int32", BasicType::I32, 1u64 << 31);
-    impl_int_field_def_test!(parse_i64_field_def, "int64", BasicType::I64, 1u128 << 63);
+    impl_int_field_def_test!(parse_i64_field_def, "int64", BasicType::I64, 1u64 << 63);
 
     impl_int_field_def_test!(parse_char_field_def, "char", BasicType::Char, 1u64 << 8);
     impl_int_field_def_test!(parse_byte_field_def, "byte", BasicType::Byte, 1u64 << 8);
