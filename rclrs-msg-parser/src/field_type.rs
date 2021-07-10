@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BasicType {
     // signed integer type
     I8,
@@ -25,22 +25,22 @@ pub enum BasicType {
     Byte,
 }
 
-#[derive(Debug, Clone)]
-pub struct NamedType(String);
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NamedType(std::string::String);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct String;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WString;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BoundedString(usize);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BoundedWString(usize);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NestableType {
     BasicType(BasicType),
     NamedType(NamedType),
@@ -50,24 +50,24 @@ pub enum NestableType {
     BoundedWString(BoundedWString),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Array {
     pub value_type: NestableType,
     pub size: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Sequence {
     pub value_type: NestableType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BoundedSequence {
     pub value_type: NestableType,
     pub max_size: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FieldType {
     BasicType(BasicType),
     NamedType(NamedType),
@@ -80,7 +80,7 @@ pub enum FieldType {
     BoundedSequence(BoundedSequence),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConstantType {
     BasicType(BasicType),
     String(String),
