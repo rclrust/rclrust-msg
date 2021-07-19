@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use rclrs_msg_parser::parser::parse_message_file;
-use rclrs_msg_parser::spec::{Member, Message};
-use rclrs_msg_parser::types::*;
+use rclrs_msg_parser::parse_message_file;
+use rclrs_msg_types::*;
 
 fn parse_msg_def(msg_name: &str) -> Result<Message> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

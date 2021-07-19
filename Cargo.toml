@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "rclrs-msg-parser",
+    "rclrs-msg-types",
+]

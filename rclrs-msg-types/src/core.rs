@@ -1,4 +1,4 @@
-use crate::types::{ConstantType, MemberType};
+use crate::{ConstantType, MemberType};
 
 /// A member of a structure
 #[derive(Debug, Clone, PartialEq)]

@@ -4,11 +4,10 @@ use nom::character::complete::{space0, space1};
 use nom::combinator::{eof, opt, recognize};
 use nom::multi::separated_list1;
 use nom::sequence::{preceded, tuple};
+use rclrs_msg_types::{Member, MemberType, NestableType};
 
-use super::{ident, literal, types};
 use crate::error::RclMsgError;
-use crate::spec::Member;
-use crate::types::{MemberType, NestableType};
+use crate::{ident, literal, types};
 
 fn nestable_type_default(nestable_type: NestableType, default: &str) -> Result<String> {
     match nestable_type {
@@ -129,8 +128,8 @@ pub fn member_def(line: &str) -> Result<Member> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::types::BasicType;
     use anyhow::Result;
+    use rclrs_msg_types::BasicType;
 
     #[test]
     fn parse_member_def() -> Result<()> {

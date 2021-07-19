@@ -1,5 +1,5 @@
 [package]
-name = "rclrs-msg-parser"
+name = "rclrs-msg-types"
 version = "0.1.0"
 edition = "2018"
 authors = ["Yuma Hiramatsu <yuma.hiramatsu@gmail.com>"]
@@ -9,8 +9,3 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1"
-nom = "6"
-rclrs-msg-types = { path = "../rclrs-msg-types", version = "0.1.0" }
-regex = "1"
-thiserror = "1"

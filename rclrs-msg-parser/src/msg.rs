@@ -2,9 +2,10 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
+use rclrs_msg_types::Message;
 
-use super::{constant, member};
-use crate::spec::Message;
+use crate::constant::constant_def;
+use crate::member::member_def;
 
 fn split_once(s: &'_ str, pat: char) -> (&'_ str, Option<&'_ str>) {
     let mut items = s.splitn(2, pat);
@@ -42,8 +43,8 @@ pub fn parse_message_string(
         let (_, rest) = split_once(line, ' ');
 
         match rest.unwrap().find('=') {
-            Some(_) => constants.push(constant::constant_def(line)?),
-            None => members.push(member::member_def(line)?),
+            Some(_) => constants.push(constant_def(line)?),
+            None => members.push(member_def(line)?),
         }
     }
 

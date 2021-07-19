@@ -2,11 +2,11 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
+use rclrs_msg_types::Action;
 use regex::Regex;
 
-use super::msg::parse_message_string;
 use crate::error::RclMsgError;
-use crate::spec::Action;
+use crate::msg::parse_message_string;
 
 const ACTION_GOAL_SUFFIX: &str = "_Goal";
 const ACTION_RESULT_SUFFIX: &str = "_Result";

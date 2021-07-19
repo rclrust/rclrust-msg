@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use rclrs_msg_parser::parser::parse_action_file;
-use rclrs_msg_parser::spec::Action;
-use rclrs_msg_parser::types::*;
+use rclrs_msg_parser::parse_action_file;
+use rclrs_msg_types::*;
 
 fn parse_action_def(srv_name: &str) -> Result<Action> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

@@ -2,11 +2,11 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
+use rclrs_msg_types::Service;
 use regex::Regex;
 
-use super::msg::parse_message_string;
 use crate::error::RclMsgError;
-use crate::spec::Service;
+use crate::msg::parse_message_string;
 
 const SERVICE_REQUEST_SUFFIX: &str = "_Request";
 const SERVICE_RESPONSE_SUFFIX: &str = "_Response";

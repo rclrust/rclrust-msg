@@ -1,245 +1,340 @@
-use std::fmt;
+use anyhow::anyhow;
+use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::character::complete::{char, space1};
+use nom::combinator::{eof, map, map_res, opt, peek};
+use nom::sequence::{delimited, pair, preceded, tuple};
+use nom::IResult;
+use rclrs_msg_types::{
+    Array, BasicType, BoundedSequence, ConstantType, GenericString, GenericUnboundedString,
+    MemberType, NamedType, NamespacedType, NestableType, PrimitiveArray, PrimitiveType, Sequence,
+};
 
-macro_rules! define_enum_from {
-    ($into_t:ty, $from_t:ty, $path:path) => {
-        impl From<$from_t> for $into_t {
-            fn from(t: $from_t) -> Self {
-                $path(t)
+use crate::ident::{message_name, package_name};
+use crate::literal::usize_literal;
+
+pub fn parse_member_type(s: &str) -> IResult<&str, MemberType> {
+    map_res(
+        tuple((
+            nestable_type,
+            opt(delimited(
+                char('['),
+                pair(opt(tag("<=")), opt(usize_literal)),
+                char(']'),
+            )),
+            peek(alt((space1, eof))),
+        )),
+        |(value_type, seq_info, _)| {
+            Ok(match seq_info {
+                None => value_type.into(),
+                Some((None, None)) => Sequence { value_type }.into(),
+                Some((None, Some(size))) => Array { value_type, size }.into(),
+                Some((Some(_), Some(size))) => BoundedSequence {
+                    value_type,
+                    max_size: size,
+                }
+                .into(),
+                Some((Some(_), None)) => {
+                    return Err(anyhow!("max_size should be specified"));
+                }
+            })
+        },
+    )(s)
+}
+
+pub fn parse_constant_type(s: &str) -> IResult<&str, ConstantType> {
+    map(
+        tuple((
+            primitive_type,
+            opt(delimited(char('['), usize_literal, char(']'))),
+            peek(alt((space1, eof))),
+        )),
+        |(value_type, size, _)| match size {
+            None => value_type.into(),
+            Some(size) => PrimitiveArray { value_type, size }.into(),
+        },
+    )(s)
+}
+
+fn basic_type(s: &str) -> IResult<&str, BasicType> {
+    map(
+        alt((
+            tag("uint8"),
+            tag("uint16"),
+            tag("uint32"),
+            tag("uint64"),
+            tag("int8"),
+            tag("int16"),
+            tag("int32"),
+            tag("int64"),
+            tag("int64"),
+            tag("int64"),
+            tag("float32"),
+            tag("float64"),
+            tag("bool"),
+            tag("char"),
+            tag("byte"),
+        )),
+        |s| BasicType::parse(s).unwrap(),
+    )(s)
+}
+
+fn named_type(s: &str) -> IResult<&str, NamedType> {
+    map(message_name, |name| NamedType(name.into()))(s)
+}
+
+fn namespaced_type(s: &str) -> IResult<&str, NamespacedType> {
+    map(
+        tuple((package_name, char('/'), message_name)),
+        |(package, _, name)| NamespacedType {
+            package_name: package.into(),
+            name: name.into(),
+        },
+    )(s)
+}
+
+fn generic_string(s: &str) -> IResult<&str, GenericString> {
+    map(
+        pair(
+            alt((tag("string"), tag("wstring"))),
+            opt(preceded(tag("<="), usize_literal)),
+        ),
+        |(type_str, array_info)| {
+            if let Some(max_size) = array_info {
+                match type_str {
+                    "string" => GenericString::BoundedString(max_size),
+                    "wstring" => GenericString::BoundedWString(max_size),
+                    _ => unreachable!(),
+                }
+            } else {
+                match type_str {
+                    "string" => GenericString::String,
+                    "wstring" => GenericString::WString,
+                    _ => unreachable!(),
+                }
             }
-        }
-    };
+        },
+    )(s)
 }
 
-/// A basic type according to the IDL specification.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BasicType {
-    // signed integer type
-    /// Rust: [i8], C++: `int8_t`
-    I8,
-    /// Rust: [i16], C++: `int16_t`
-    I16,
-    /// Rust: [i32], C++: `int32_t`
-    I32,
-    /// Rust: [i64], C++: `int64_t`
-    I64,
-
-    // unsigned integer type
-    /// Rust: [u8], C++: `uint8_t`
-    U8,
-    /// Rust: [u16], C++: `uint16_t`
-    U16,
-    /// Rust: [u32], C++: `uint32_t`
-    U32,
-    /// Rust: [u64], C++: `uint64_t`
-    U64,
-
-    // floating point type
-    /// Rust: [f32], C++: `float`
-    F32,
-    /// Rust: [f64], C++: `double`
-    F64,
-    // long double is not supported
-
-    // boolean type
-    /// Rust: [bool], C++: `bool`
-    Bool,
-
-    // duplicated type
-    /// Rust: [u8], C++: `unsigned char`
-    Char,
-    /// Rust: [u8], C++: `unsigned char`
-    Byte,
+fn generic_unbounded_string(s: &str) -> IResult<&str, GenericUnboundedString> {
+    map(
+        alt((tag("string"), tag("wstring"))),
+        |type_str| match type_str {
+            "string" => GenericUnboundedString::String,
+            "wstring" => GenericUnboundedString::WString,
+            _ => unreachable!(),
+        },
+    )(s)
 }
 
-impl BasicType {
-    pub(crate) fn from_str(s: &str) -> Option<Self> {
-        Some(match s {
-            "uint8" => Self::U8,
-            "uint16" => Self::U16,
-            "uint32" => Self::U32,
-            "uint64" => Self::U64,
-            "int8" => Self::I8,
-            "int16" => Self::I16,
-            "int32" => Self::I32,
-            "int64" => Self::I64,
-            "float32" => Self::F32,
-            "float64" => Self::F64,
-            "bool" => Self::Bool,
-            "char" => Self::Char,
-            "byte" => Self::Byte,
-            _ => {
-                return None;
+fn nestable_type(s: &str) -> IResult<&str, NestableType> {
+    alt((
+        map(basic_type, |type_| type_.into()),
+        map(generic_string, |type_| type_.into()),
+        map(namespaced_type, |type_| type_.into()),
+        map(named_type, |type_| type_.into()),
+    ))(s)
+}
+
+fn primitive_type(s: &str) -> IResult<&str, PrimitiveType> {
+    alt((
+        map(basic_type, |type_| type_.into()),
+        map(generic_unbounded_string, |type_| type_.into()),
+    ))(s)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use anyhow::Result;
+
+    #[test]
+    fn test_parse_member_type_basic_type() -> Result<()> {
+        assert_eq!(parse_member_type("int8")?.1, BasicType::I8.into());
+        assert_eq!(parse_member_type("int16")?.1, BasicType::I16.into());
+        assert_eq!(parse_member_type("int32")?.1, BasicType::I32.into());
+        assert_eq!(parse_member_type("int64")?.1, BasicType::I64.into());
+        assert_eq!(parse_member_type("uint8")?.1, BasicType::U8.into());
+        assert_eq!(parse_member_type("uint16")?.1, BasicType::U16.into());
+        assert_eq!(parse_member_type("uint32")?.1, BasicType::U32.into());
+        assert_eq!(parse_member_type("uint64")?.1, BasicType::U64.into());
+        assert_eq!(parse_member_type("float32")?.1, BasicType::F32.into());
+        assert_eq!(parse_member_type("float64")?.1, BasicType::F64.into());
+        assert_eq!(parse_member_type("bool")?.1, BasicType::Bool.into());
+        assert_eq!(parse_member_type("char")?.1, BasicType::Char.into());
+        assert_eq!(parse_member_type("byte")?.1, BasicType::Byte.into());
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_member_type_named_type() -> Result<()> {
+        assert_eq!(parse_member_type("ABC")?.1, NamedType("ABC".into()).into());
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_member_type_namespaced_type() -> Result<()> {
+        assert_eq!(
+            parse_member_type("std_msgs/Bool")?.1,
+            NamespacedType {
+                package_name: "std_msgs".into(),
+                name: "Bool".into()
             }
-        })
+            .into()
+        );
+        Ok(())
     }
-}
 
-/// A type identified by the name
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NamedType(pub String);
-
-impl fmt::Display for NamedType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+    #[test]
+    fn test_parse_member_type_generic_string() -> Result<()> {
+        assert_eq!(parse_member_type("string")?.1, GenericString::String.into());
+        assert_eq!(
+            parse_member_type("wstring")?.1,
+            GenericString::WString.into()
+        );
+        assert_eq!(
+            parse_member_type("string<=5")?.1,
+            GenericString::BoundedString(5).into()
+        );
+        assert_eq!(
+            parse_member_type("wstring<=5")?.1,
+            GenericString::BoundedWString(5).into()
+        );
+        Ok(())
     }
-}
 
-/// A type identified by a name in a namespaced scope
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NamespacedType {
-    /// A package name which this type belongs to
-    /// e.g. `std_msgs`
-    pub package_name: String,
-    /// A name of message
-    /// e.g. `Bool`
-    pub name: String,
-}
-
-impl fmt::Display for NamespacedType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}/msg/{}", self.package_name, self.name)
+    #[test]
+    fn test_parse_member_type_array() -> Result<()> {
+        assert_eq!(
+            parse_member_type("string[5]")?.1,
+            Array {
+                value_type: GenericString::String.into(),
+                size: 5,
+            }
+            .into()
+        );
+        assert_eq!(
+            parse_member_type("string<=6[5]")?.1,
+            Array {
+                value_type: GenericString::BoundedString(6).into(),
+                size: 5,
+            }
+            .into()
+        );
+        Ok(())
     }
-}
 
-/// A string type
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum GenericString {
-    String,
-    WString,
-    BoundedString(usize),
-    BoundedWString(usize),
-}
-
-impl From<GenericUnboundedString> for GenericString {
-    fn from(t: GenericUnboundedString) -> Self {
-        match t {
-            GenericUnboundedString::String => Self::String,
-            GenericUnboundedString::WString => Self::WString,
-        }
+    #[test]
+    fn test_parse_member_type_sequence() -> Result<()> {
+        assert_eq!(
+            parse_member_type("string[]")?.1,
+            Sequence {
+                value_type: GenericString::String.into(),
+            }
+            .into()
+        );
+        assert_eq!(
+            parse_member_type("string<=6[]")?.1,
+            Sequence {
+                value_type: GenericString::BoundedString(6).into(),
+            }
+            .into()
+        );
+        Ok(())
     }
-}
 
-/// A generic unbounded string type
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum GenericUnboundedString {
-    String,
-    WString,
-}
-
-/// A type which can be used inside nested types
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum NestableType {
-    BasicType(BasicType),
-    NamedType(NamedType),
-    NamespacedType(NamespacedType),
-    GenericString(GenericString),
-}
-
-define_enum_from!(NestableType, BasicType, Self::BasicType);
-define_enum_from!(NestableType, NamedType, Self::NamedType);
-define_enum_from!(NestableType, NamespacedType, Self::NamespacedType);
-define_enum_from!(NestableType, GenericString, Self::GenericString);
-
-/// An array type with a static size
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Array {
-    /// The type of the elements
-    pub value_type: NestableType,
-    /// The number of elements in the array
-    pub size: usize,
-}
-
-/// A sequence type with an unlimited number of elements
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Sequence {
-    /// The type of the elements
-    pub value_type: NestableType,
-}
-
-/// A sequence type with a maximum number of elements
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BoundedSequence {
-    /// The type of the elements
-    pub value_type: NestableType,
-    /// The maximum number of elements in the sequence
-    pub max_size: usize,
-}
-
-/// A type which is available for member
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum MemberType {
-    BasicType(BasicType),
-    NamedType(NamedType),
-    NamespacedType(NamespacedType),
-    GenericString(GenericString),
-    Array(Array),
-    Sequence(Sequence),
-    BoundedSequence(BoundedSequence),
-}
-
-define_enum_from!(MemberType, BasicType, Self::BasicType);
-define_enum_from!(MemberType, NamedType, Self::NamedType);
-define_enum_from!(MemberType, NamespacedType, Self::NamespacedType);
-define_enum_from!(MemberType, GenericString, Self::GenericString);
-define_enum_from!(MemberType, Array, Self::Array);
-define_enum_from!(MemberType, Sequence, Self::Sequence);
-define_enum_from!(MemberType, BoundedSequence, Self::BoundedSequence);
-
-impl From<NestableType> for MemberType {
-    fn from(t: NestableType) -> Self {
-        match t {
-            NestableType::BasicType(t) => Self::BasicType(t),
-            NestableType::NamedType(t) => Self::NamedType(t),
-            NestableType::NamespacedType(t) => Self::NamespacedType(t),
-            NestableType::GenericString(t) => Self::GenericString(t),
-        }
+    #[test]
+    fn test_parse_member_type_bounded_sequence() -> Result<()> {
+        assert_eq!(
+            parse_member_type("string[<=5]")?.1,
+            BoundedSequence {
+                value_type: GenericString::String.into(),
+                max_size: 5,
+            }
+            .into()
+        );
+        assert_eq!(
+            parse_member_type("string<=6[<=5]")?.1,
+            BoundedSequence {
+                value_type: GenericString::BoundedString(6).into(),
+                max_size: 5,
+            }
+            .into()
+        );
+        Ok(())
     }
-}
 
-/// A primitive type which can be used for constant
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PrimitiveType {
-    BasicType(BasicType),
-    GenericUnboundedString(GenericUnboundedString),
-}
+    #[test]
+    fn test_parse_constant_type_basic_type() -> Result<()> {
+        assert_eq!(parse_constant_type("int8")?.1, BasicType::I8.into());
+        assert_eq!(parse_constant_type("int16")?.1, BasicType::I16.into());
+        assert_eq!(parse_constant_type("int32")?.1, BasicType::I32.into());
+        assert_eq!(parse_constant_type("int64")?.1, BasicType::I64.into());
+        assert_eq!(parse_constant_type("uint8")?.1, BasicType::U8.into());
+        assert_eq!(parse_constant_type("uint16")?.1, BasicType::U16.into());
+        assert_eq!(parse_constant_type("uint32")?.1, BasicType::U32.into());
+        assert_eq!(parse_constant_type("uint64")?.1, BasicType::U64.into());
+        assert_eq!(parse_constant_type("float32")?.1, BasicType::F32.into());
+        assert_eq!(parse_constant_type("float64")?.1, BasicType::F64.into());
+        assert_eq!(parse_constant_type("bool")?.1, BasicType::Bool.into());
+        assert_eq!(parse_constant_type("char")?.1, BasicType::Char.into());
+        assert_eq!(parse_constant_type("byte")?.1, BasicType::Byte.into());
+        Ok(())
+    }
 
-define_enum_from!(PrimitiveType, BasicType, Self::BasicType);
-define_enum_from!(
-    PrimitiveType,
-    GenericUnboundedString,
-    Self::GenericUnboundedString
-);
+    #[test]
+    fn test_parse_constant_type_named_type() -> Result<()> {
+        assert!(parse_constant_type("ABC").is_err());
+        Ok(())
+    }
 
-/// An array type of a primitive type
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PrimitiveArray {
-    /// The type of the elements
-    pub value_type: PrimitiveType,
-    /// The number of elements in the array
-    pub size: usize,
-}
+    #[test]
+    fn test_parse_constant_type_namespaced_type() -> Result<()> {
+        assert!(parse_constant_type("std_msgs/Bool").is_err());
+        Ok(())
+    }
 
-/// A type which is available for constant
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ConstantType {
-    BasicType(BasicType),
-    GenericUnboundedString(GenericUnboundedString),
-    PrimitiveArray(PrimitiveArray),
-}
+    #[test]
+    fn test_parse_constant_type_generic_string() -> Result<()> {
+        assert_eq!(
+            parse_constant_type("string")?.1,
+            GenericUnboundedString::String.into()
+        );
+        assert_eq!(
+            parse_constant_type("wstring")?.1,
+            GenericUnboundedString::WString.into()
+        );
+        assert!(parse_constant_type("string<=5").is_err());
+        assert!(parse_constant_type("wstring<=5").is_err());
+        Ok(())
+    }
 
-define_enum_from!(ConstantType, BasicType, Self::BasicType);
-define_enum_from!(
-    ConstantType,
-    GenericUnboundedString,
-    Self::GenericUnboundedString
-);
-define_enum_from!(ConstantType, PrimitiveArray, Self::PrimitiveArray);
+    #[test]
+    fn test_parse_constant_type_array() -> Result<()> {
+        assert_eq!(
+            parse_constant_type("string[5]")?.1,
+            PrimitiveArray {
+                value_type: GenericUnboundedString::String.into(),
+                size: 5,
+            }
+            .into()
+        );
+        assert!(parse_constant_type("string<=6[5]").is_err());
+        Ok(())
+    }
 
-impl From<PrimitiveType> for ConstantType {
-    fn from(t: PrimitiveType) -> Self {
-        match t {
-            PrimitiveType::BasicType(t) => Self::BasicType(t),
-            PrimitiveType::GenericUnboundedString(t) => Self::GenericUnboundedString(t),
-        }
+    #[test]
+    fn test_parse_constant_type_sequence() -> Result<()> {
+        assert!(parse_constant_type("string[]").is_err());
+        assert!(parse_constant_type("string<=6[]").is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_const_type_bounded_sequence() -> Result<()> {
+        assert!(parse_constant_type("string[<=5]").is_err());
+        assert!(parse_constant_type("string<=6[<=5]").is_err());
+        Ok(())
     }
 }

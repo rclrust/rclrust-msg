@@ -4,11 +4,10 @@ use nom::character::complete::{char, space0, space1};
 use nom::combinator::{eof, recognize};
 use nom::multi::separated_list1;
 use nom::sequence::tuple;
+use rclrs_msg_types::{Constant, ConstantType, PrimitiveType};
 
-use super::{ident, literal, types};
 use crate::error::RclMsgError;
-use crate::spec::Constant;
-use crate::types::{ConstantType, PrimitiveType};
+use crate::{ident, literal, types};
 
 fn validate_value(r#type: ConstantType, value: &str) -> Result<String> {
     match r#type {
@@ -82,7 +81,7 @@ pub fn constant_def(line: &str) -> Result<Constant> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::types::*;
+    use rclrs_msg_types::*;
 
     #[test]
     fn parse_member_def_with_default() -> Result<()> {
