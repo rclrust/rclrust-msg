@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use rclrs_msg_types::Message;
 
 use crate::constant::constant_def;
@@ -23,6 +23,7 @@ pub fn parse_message_file<P: AsRef<Path>>(pkg_name: &str, interface_file: P) -> 
             .unwrap(),
         fs::read_to_string(interface_file.as_ref())?.as_str(),
     )
+    .with_context(|| format!("Parse file error: {}", interface_file.as_ref().display()))
 }
 
 pub fn parse_message_string(

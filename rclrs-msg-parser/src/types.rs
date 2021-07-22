@@ -87,7 +87,8 @@ fn namespaced_type(s: &str) -> IResult<&str, NamespacedType> {
     map(
         tuple((package_name, char('/'), message_name)),
         |(package, _, name)| NamespacedType {
-            package_name: package.into(),
+            package: package.into(),
+            namespace: "msg".into(),
             name: name.into(),
         },
     )(s)
@@ -178,7 +179,8 @@ mod test {
         assert_eq!(
             parse_member_type("std_msgs/Bool")?.1,
             NamespacedType {
-                package_name: "std_msgs".into(),
+                package: "std_msgs".into(),
+                namespace: "msg".into(),
                 name: "Bool".into()
             }
             .into()

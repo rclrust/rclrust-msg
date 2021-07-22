@@ -1,9 +1,13 @@
 [package]
-name = "rclrs-msg-types"
+name = "rclrs-msg-core"
 version = "0.1.0"
 edition = "2018"
 authors = ["Yuma Hiramatsu <yuma.hiramatsu@gmail.com>"]
 repository = "https://github.com/ros2rust/ros2rust"
 license = "Apache-2.0"
 
-[dependencies]
+[dev-dependencies]
+rand = "0.7"
+
+[build-dependencies]
+bindgen = "0.59"

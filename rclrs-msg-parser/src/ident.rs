@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::character::complete::{alphanumeric0, char, one_of};
 use nom::combinator::{opt, recognize};
-use nom::multi::{many1, separated_list1};
+use nom::multi::{many1, separated_list0, separated_list1};
 use nom::sequence::{pair, tuple};
 use nom::IResult;
 
@@ -29,7 +29,7 @@ pub fn member_name(s: &str) -> IResult<&str, &str> {
     recognize(tuple((
         loweralpha,
         opt(char('_')),
-        separated_list1(char('_'), many1(alt((loweralpha, numeric)))),
+        separated_list0(char('_'), many1(alt((loweralpha, numeric)))),
     )))(s)
 }
 

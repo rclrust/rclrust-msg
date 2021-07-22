@@ -57,11 +57,13 @@ fn validate_value(r#type: ConstantType, value: &str) -> Result<String> {
 }
 
 pub fn constant_def(line: &str) -> Result<Constant> {
-    let (_, (r#type, _, name, _, value, _, _)) = tuple((
+    let (_, (r#type, _, name, _, _, _, value, _, _)) = tuple((
         types::parse_constant_type,
         space1,
         ident::constant_name,
+        space0,
         char('='),
+        space0,
         recognize(separated_list1(space1, is_not(" \t"))),
         space0,
         eof,

@@ -65,7 +65,7 @@ impl BasicType {
         })
     }
 
-    pub fn to_rust_str(self) -> &'static str {
+    pub const fn to_rust_str(self) -> &'static str {
         match self {
             Self::I8 => "i8",
             Self::I16 => "i16",
@@ -97,25 +97,39 @@ impl fmt::Display for NamedType {
 pub struct NamespacedType {
     /// A package name which this type belongs to
     /// e.g. `std_msgs`
-    pub package_name: String,
+    pub package: String,
+    /// msg or action
+    pub namespace: String,
     /// A name of message
     /// e.g. `Bool`
     pub name: String,
 }
 
+impl NamespacedType {
+    pub fn to_rust_str(&self) -> String {
+        format!("{}::{}::{}", self.package, self.namespace, self.name)
+    }
+}
+
 impl fmt::Display for NamespacedType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}/msg/{}", self.package_name, self.name)
+        write!(f, "{}/{}/{}", self.package, self.namespace, self.name)
     }
 }
 
 /// A string type
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GenericString {
     String,
     WString,
     BoundedString(usize),
     BoundedWString(usize),
+}
+
+impl GenericString {
+    pub const fn is_wide(self) -> bool {
+        matches!(self, Self::WString | Self::BoundedWString(_))
+    }
 }
 
 impl From<GenericUnboundedString> for GenericString {
