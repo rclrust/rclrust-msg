@@ -4,8 +4,8 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 use anyhow::Result;
-use rclrs_msg_parser::{parse_action_file, parse_message_file, parse_service_file};
-use rclrs_msg_types::{Action, Message, Service};
+use rclrust_msg_parser::{parse_action_file, parse_message_file, parse_service_file};
+use rclrust_msg_types::{Action, Message, Service};
 
 #[derive(Debug, Clone)]
 pub struct RosPackageMsgs {

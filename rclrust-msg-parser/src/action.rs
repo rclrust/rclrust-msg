@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use rclrs_msg_types::Action;
+use rclrust_msg_types::Action;
 use regex::Regex;
 
 use crate::error::RclMsgError;

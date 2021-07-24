@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rclrs_msg_build_helper::parse::get_packages_msgs;
+use rclrust_msg_build_helper::parse::get_packages_msgs;
 use std::path::PathBuf;
 
 #[test]

@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use rclrs_msg_types::Message;
+use rclrust_msg_types::Message;
 
 use crate::constant::constant_def;
 use crate::member::member_def;

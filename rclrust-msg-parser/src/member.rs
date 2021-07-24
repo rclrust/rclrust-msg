@@ -4,7 +4,7 @@ use nom::character::complete::{space0, space1};
 use nom::combinator::{eof, opt, recognize};
 use nom::multi::separated_list1;
 use nom::sequence::{preceded, tuple};
-use rclrs_msg_types::{Member, MemberType, NestableType};
+use rclrust_msg_types::{Member, MemberType, NestableType};
 
 use crate::error::RclMsgError;
 use crate::{ident, literal, types};
@@ -129,7 +129,7 @@ pub fn member_def(line: &str) -> Result<Member> {
 mod test {
     use super::*;
     use anyhow::Result;
-    use rclrs_msg_types::BasicType;
+    use rclrust_msg_types::BasicType;
 
     #[test]
     fn parse_member_def() -> Result<()> {

@@ -10,7 +10,7 @@ use nom::multi::{many0, separated_list1};
 use nom::number::complete::recognize_float;
 use nom::sequence::{delimited, pair, tuple};
 use nom::IResult;
-use rclrs_msg_types::{BasicType, GenericString};
+use rclrust_msg_types::{BasicType, GenericString};
 
 pub fn usize_literal(s: &str) -> IResult<&str, usize> {
     map_res(dec_literal, usize::try_from)(s)

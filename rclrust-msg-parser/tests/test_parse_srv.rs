@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use rclrs_msg_parser::parse_service_file;
-use rclrs_msg_types::*;
+use rclrust_msg_parser::parse_service_file;
+use rclrust_msg_types::*;
 
 fn parse_srv_def(srv_name: &str) -> Result<Service> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

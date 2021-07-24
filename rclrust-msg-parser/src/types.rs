@@ -5,7 +5,7 @@ use nom::character::complete::{char, space1};
 use nom::combinator::{eof, map, map_res, opt, peek};
 use nom::sequence::{delimited, pair, preceded, tuple};
 use nom::IResult;
-use rclrs_msg_types::{
+use rclrust_msg_types::{
     Array, BasicType, BoundedSequence, ConstantType, GenericString, GenericUnboundedString,
     MemberType, NamedType, NamespacedType, NestableType, PrimitiveArray, PrimitiveType, Sequence,
 };

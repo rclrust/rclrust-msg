@@ -1,4 +1,4 @@
-use rclrs_msg_types as types;
+use rclrust_msg_types as types;
 
 /// Keywords in Rust
 /// https://doc.rust-lang.org/reference/keywords.html
@@ -25,7 +25,7 @@ pub fn escape_keyword(s: &str) -> String {
     }
 }
 
-pub const RCLRS_MSG_CORE: &str = "rclrs_msg_core";
+pub const RCLRS_MSG_CORE: &str = "rclrust_msg_core";
 pub const MSG_TYPE_SUPPORT_PREFIX: &str = "rosidl_typesupport_c__get_message_type_support_handle";
 pub const SRV_TYPE_SUPPORT_PREFIX: &str = "rosidl_typesupport_c__get_service_type_support_handle";
 pub const ACTION_TYPE_SUPPORT_PREFIX: &str = "rosidl_typesupport_c__get_action_type_support_handle";

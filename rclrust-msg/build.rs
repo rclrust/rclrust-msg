@@ -3,8 +3,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use heck::SnakeCase;
-use rclrs_msg_build_helper::codegen;
-use rclrs_msg_build_helper::parse::{get_packages_msgs, RosPackageMsgs};
+use rclrust_msg_build_helper::codegen;
+use rclrust_msg_build_helper::parse::{get_packages_msgs, RosPackageMsgs};
 use sailfish::TemplateOnce;
 
 #[derive(Debug, TemplateOnce)]

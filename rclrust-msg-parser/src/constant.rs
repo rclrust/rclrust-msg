@@ -4,7 +4,7 @@ use nom::character::complete::{char, space0, space1};
 use nom::combinator::{eof, recognize};
 use nom::multi::separated_list1;
 use nom::sequence::tuple;
-use rclrs_msg_types::{Constant, ConstantType, PrimitiveType};
+use rclrust_msg_types::{Constant, ConstantType, PrimitiveType};
 
 use crate::error::RclMsgError;
 use crate::{ident, literal, types};
@@ -83,7 +83,7 @@ pub fn constant_def(line: &str) -> Result<Constant> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use rclrs_msg_types::*;
+    use rclrust_msg_types::*;
 
     #[test]
     fn parse_member_def_with_default() -> Result<()> {
