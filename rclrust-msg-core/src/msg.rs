@@ -2,7 +2,7 @@ use std::os::raw::c_void;
 
 use crate::traits::{FFIFromRust, FFIToRust};
 
-pub trait MessageT {
+pub trait MessageT: Default {
     type Raw: RawMessageT;
     type RawRef: RawMessageRefT;
 
@@ -11,6 +11,6 @@ pub trait MessageT {
     unsafe fn to_raw_ref(&self) -> Self::RawRef;
 }
 
-pub trait RawMessageT: FFIToRust {}
+pub trait RawMessageT: FFIToRust + Default {}
 
 pub trait RawMessageRefT: FFIFromRust {}
