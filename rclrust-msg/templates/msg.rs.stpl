@@ -45,6 +45,10 @@ impl _MessageT for <@= msg.name @> {
         }
     }
 
+    unsafe fn from_raw(from: &Self::Raw) -> Self {
+        from.to_rust()
+    }
+
     unsafe fn to_raw_ref(&self) -> Self::RawRef {
         Self::RawRef::from_rust(self)
     }

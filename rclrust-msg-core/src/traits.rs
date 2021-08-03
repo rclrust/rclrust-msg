@@ -7,6 +7,8 @@ pub trait MessageT: Default {
 
     fn type_support() -> *const c_void;
 
+    unsafe fn from_raw(from: &Self::Raw) -> Self;
+
     unsafe fn to_raw_ref(&self) -> Self::RawRef;
 }
 
