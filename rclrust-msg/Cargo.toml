@@ -20,6 +20,4 @@ rclrust-msg-core = { path = "../rclrust-msg-core", version = "0.0.1" }
 [build-dependencies]
 heck = "0.3"
 rclrust-msg-build-helper = { path = "../rclrust-msg-build-helper", version = "0.0.1" }
-rclrust-msg-parser = { path = "../rclrust-msg-parser", version = "0.0.1" }
-rclrust-msg-types = { path = "../rclrust-msg-types", version = "0.0.1" }
 sailfish = "0.3"

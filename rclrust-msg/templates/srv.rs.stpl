@@ -2,7 +2,7 @@
 
 use std::os::raw::c_void;
 
-use <@= codegen::RCLRS_MSG_CORE @>::srv::ServiceT as _ServiceT;
+use <@= codegen::RCLRS_MSG_CORE @>::traits::ServiceT as _ServiceT;
 
 pub use self::request::*;
 pub use self::response::*;

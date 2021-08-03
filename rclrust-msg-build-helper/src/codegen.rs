@@ -143,7 +143,7 @@ pub fn msg_type_to_rs_not_raw(member: &types::Member, pkg_name: &str) -> String 
         }
         types::NestableType::GenericString(ref t) => {
             if t.is_wide() {
-                "std::vec::Vec<u16>".into()
+                "crate::widestring::U16String".into()
             } else {
                 "std::string::String".into()
             }

@@ -44,8 +44,8 @@ where
 {
     type Target = Vec<T::Target>;
 
-    fn to_rust(&self) -> Self::Target {
-        self.iter().map(FFIToRust::to_rust).collect()
+    unsafe fn to_rust(&self) -> Self::Target {
+        self.iter().map(|v| v.to_rust()).collect()
     }
 }
 
@@ -110,7 +110,7 @@ where
 {
     type From = Vec<T::From>;
 
-    unsafe fn from_rust(vec: &Self::From) -> Self {
+    fn from_rust(vec: &Self::From) -> Self {
         if vec.is_empty() {
             Self::zero_init()
         } else {
@@ -165,7 +165,7 @@ impl<T> RefFFISeq<T> {
 impl<T> FFIFromRust for RefFFISeq<T> {
     type From = Vec<T>;
 
-    unsafe fn from_rust(vec: &Self::From) -> Self {
+    fn from_rust(vec: &Self::From) -> Self {
         if vec.is_empty() {
             Self::zero_init()
         } else {

@@ -1,10 +1,8 @@
-use std::{
-    ffi::{CStr, CString},
-    mem::ManuallyDrop,
-    os::raw::c_char,
-};
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
 
-use crate::ffi::uint_least16_t;
+use widestring::{U16CStr, U16CString, U16String};
+
 use crate::traits::{FFIFromRust, FFIToRust, ZeroInit};
 
 /// An array of 8-bit characters terminated by a null character.
@@ -41,11 +39,11 @@ impl ZeroInit for FFIString {
 impl FFIToRust for FFIString {
     type Target = String;
 
-    fn to_rust(&self) -> Self::Target {
+    unsafe fn to_rust(&self) -> Self::Target {
         if self.is_empty() {
             "".to_string()
         } else {
-            unsafe { CStr::from_ptr(self.data) }
+            CStr::from_ptr(self.data)
                 .to_str()
                 .expect("CStr::to_str failed")
                 .to_string()
@@ -86,7 +84,7 @@ impl ZeroInit for OwnedFFIString {
 impl FFIFromRust for OwnedFFIString {
     type From = String;
 
-    unsafe fn from_rust(string: &Self::From) -> Self {
+    fn from_rust(string: &Self::From) -> Self {
         let cstring = CString::new(string.clone()).expect("CString::new failed");
         let len = cstring.as_bytes().len();
         Self {
@@ -105,12 +103,11 @@ impl Drop for OwnedFFIString {
     }
 }
 
-/// An array of 16-bit characters terminated by a null character.  <br>
-/// *Is it better to be compatible with some crates supporting wide string?*
+/// An array of 16-bit characters terminated by a null character.
 #[repr(C)]
 #[derive(Debug)]
 pub struct FFIWString {
-    data: *mut uint_least16_t,
+    data: *mut u16,
     size: usize,
     capacity: usize,
 }
@@ -138,20 +135,21 @@ impl ZeroInit for FFIWString {
 }
 
 impl FFIToRust for FFIWString {
-    type Target = Vec<u16>;
+    type Target = U16String;
 
-    fn to_rust(&self) -> Self::Target {
-        unsafe { std::slice::from_raw_parts(self.data, self.len()) }
-            .iter()
-            .map(|&v| v as u16)
-            .collect::<Vec<_>>()
+    unsafe fn to_rust(&self) -> Self::Target {
+        if self.is_empty() {
+            Self::Target::new()
+        } else {
+            U16CStr::from_ptr_str(self.data).to_ustring()
+        }
     }
 }
 
 #[repr(C)]
 #[derive(Debug)]
 pub struct OwnedFFIWString {
-    data: *mut uint_least16_t,
+    data: *mut u16,
     size: usize,
     capacity: usize,
 }
@@ -179,24 +177,52 @@ impl ZeroInit for OwnedFFIWString {
 }
 
 impl FFIFromRust for OwnedFFIWString {
-    type From = Vec<u16>;
+    type From = U16String;
 
-    unsafe fn from_rust(string: &Self::From) -> Self {
-        let mut string = string.clone();
-        string.push(0);
-        string.shrink_to_fit();
-        assert_eq!(string.len(), string.capacity());
-        let mut string = ManuallyDrop::new(string);
+    fn from_rust(string: &Self::From) -> Self {
+        let cstring = U16CString::new(string.clone()).expect("U16CString::new failed");
+        let len = cstring.len();
         Self {
-            data: string.as_mut_ptr(),
-            size: string.len() - 1,
-            capacity: string.len(),
+            data: cstring.into_raw(),
+            size: len,
+            capacity: len + 1,
         }
     }
 }
 
 impl Drop for OwnedFFIWString {
     fn drop(&mut self) {
-        unsafe { Vec::from_raw_parts(self.data, self.capacity, self.capacity) };
+        unsafe { U16CString::from_raw(self.data) };
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn owned_ffi_string_new() {
+        let string = "abcde".into();
+        let cstring = OwnedFFIString::from_rust(&string);
+        let native_string = FFIString {
+            data: cstring.data,
+            size: cstring.size,
+            capacity: cstring.capacity,
+        };
+
+        assert_eq!(string, unsafe { native_string.to_rust() });
+    }
+
+    #[test]
+    fn owned_ffi_wstring_new() {
+        let wstring = U16String::from_str("あいうえお");
+        let cwstring = OwnedFFIWString::from_rust(&wstring);
+        let native_wstring = FFIWString {
+            data: cwstring.data,
+            size: cwstring.size,
+            capacity: cwstring.capacity,
+        };
+
+        assert_eq!(wstring, unsafe { native_wstring.to_rust() });
     }
 }

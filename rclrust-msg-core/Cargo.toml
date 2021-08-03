@@ -8,8 +8,5 @@ description = "TODO"
 repository = "https://github.com/rclrust/rclrust-msg"
 license = "Apache-2.0"
 
-[dev-dependencies]
-rand = "0.7"
-
-[build-dependencies]
-bindgen = "0.59"
+[dependencies]
+widestring = "0.4"

@@ -6,14 +6,12 @@
 use std::convert::TryInto as _;
 use std::os::raw::c_void;
 
-use <@= codegen::RCLRS_MSG_CORE @>::msg::{
-    MessageT as _MessageT,
-    RawMessageRefT as _RawMessageRefT,
-    RawMessageT as _RawMessageT,
-};
 use <@= codegen::RCLRS_MSG_CORE @>::traits::{
     FFIFromRust as _FFIFromRust,
     FFIToRust as _FFIToRust,
+    MessageT as _MessageT,
+    RawMessageRefT as _RawMessageRefT,
+    RawMessageT as _RawMessageT,
     ZeroInit as _ZeroInit
 };
 
@@ -117,7 +115,7 @@ impl _ZeroInit for <@= msg.name @>_Raw {
 impl _FFIToRust for <@= msg.name @>_Raw {
     type Target = <@= msg.name @>;
 
-    fn to_rust(&self) -> Self::Target {
+    unsafe fn to_rust(&self) -> Self::Target {
         Self::Target {
 <@ for member in &msg.members { @>
             <@= codegen::escape_keyword(&member.name) @>: <@= codegen::create_ffi_to_rust(member) @>,
@@ -186,7 +184,7 @@ impl _FFIFromRust for <@= msg.name @>_RawRef {
     type From = <@= msg.name @>;
 
     #[allow(unused_variables)]
-    unsafe fn from_rust(from: &Self::From) -> Self {
+    fn from_rust(from: &Self::From) -> Self {
         Self {
 <@ if msg.members.is_empty() { @>
             structure_needs_at_least_one_member: 0,

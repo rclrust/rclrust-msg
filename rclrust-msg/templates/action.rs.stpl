@@ -2,7 +2,7 @@
 
 use std::os::raw::c_void;
 
-use <@= codegen::RCLRS_MSG_CORE @>::action::ActionT as _ActionT;
+use <@= codegen::RCLRS_MSG_CORE @>::traits::ActionT as _ActionT;
 
 pub use self::goal::*;
 pub use self::result::*;

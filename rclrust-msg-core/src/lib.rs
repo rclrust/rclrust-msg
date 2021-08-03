@@ -5,12 +5,9 @@
     clippy::nursery
 )]
 
-pub mod action;
-#[doc(hidden)]
-pub mod ffi;
-pub mod msg;
+pub use widestring;
+
 pub mod sequence;
-pub mod srv;
 pub mod string;
 pub mod traits;
 
